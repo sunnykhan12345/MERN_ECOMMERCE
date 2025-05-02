@@ -42,7 +42,7 @@ export const getAllProducts = async (req, res) => {
 export const updateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true, 
+      new: true,
       runValidators: true,
     });
 
@@ -66,8 +66,55 @@ export const updateProduct = async (req, res) => {
     });
   }
 };
-// export const getproducts = (req, res) => {
-//   res.status(200).json({
-//     message: "All Productss",
-//   });
-// };
+// delete product API - PUT /api/v1/products/:id
+export const deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product Deleted successfully",
+      product,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      success: false,
+      message: error.message || "Product update failed",
+    });
+  }
+};
+// accessing single product
+export const getProductDetails = async (req, res) => {
+  console.log(req.params.id);
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "SingleProduct  get successfully",
+      product,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      success: false,
+      message: error.message || "get SingleProduct  failed",
+    });
+  }
+};
