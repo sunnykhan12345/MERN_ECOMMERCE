@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, "Please Enter Product"],
+    required: [true, "Please Enter Product Name"],
     trim: true,
   },
   description: {
@@ -61,10 +61,10 @@ const productSchema = new mongoose.Schema({
       },
     },
   ],
-  createdAdt:{
-    type:Date,
-    default:Date.new
-  }
+  createdAdt: {
+    type: Date,
+    default: Date.new,
+  },
 });
 
 export default mongoose.model("Product", productSchema);
