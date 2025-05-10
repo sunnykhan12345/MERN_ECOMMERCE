@@ -13,14 +13,41 @@ export const createProducts = HandleAsyncError(async (req, res, next) => {
   });
 });
 // get all prduct api api/v1/products
+// export const getAllProducts = HandleAsyncError(async (req, res, next) => {
+//   console.log(req.query);
+//   const apiFeatures = new ApiFuncality(Product.find(), req.query);
+//   const product = await Product.find().Search();
+//   res.status(201).json({
+//     success: true,
+//     message: "get all product  Successfully",
+//     product,
+//   });
+// });
+// export const getAllProducts = HandleAsyncError(async (req, res, next) => {
+//   console.log(req.query);
+
+//   const apiFeatures = new ApiFuncality(Product.find(), req.query).Search(); // ✔️ Use correct method name
+//   const product = await apiFeatures.query; // ✔️ Get result from custom class
+
+//   res.status(201).json({
+//     success: true,
+//     message: "Get all products successfully",
+//     product,
+//   });
+// });
 export const getAllProducts = HandleAsyncError(async (req, res, next) => {
   console.log(req.query);
-  // new ApiFuncality(Product.find(), req.query);
-  const product = await Product.find();
-  console.log(product);
+const currentPage = 3
+  const apiFeatures = new ApiFuncality(Product.find(), req.query)
+    .Search()
+    .filter()
+    .pagination(currentPage);
+
+  const product = await apiFeatures.query;
+
   res.status(201).json({
     success: true,
-    message: "get all product  Successfully",
+    message: "Get all products successfully",
     product,
   });
 });
