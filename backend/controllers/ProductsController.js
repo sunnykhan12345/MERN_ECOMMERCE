@@ -13,42 +13,56 @@ export const createProducts = HandleAsyncError(async (req, res, next) => {
   });
 });
 // get all prduct api api/v1/products
-// export const getAllProducts = HandleAsyncError(async (req, res, next) => {
-//   console.log(req.query);
-//   const apiFeatures = new ApiFuncality(Product.find(), req.query);
-//   const product = await Product.find().Search();
-//   res.status(201).json({
-//     success: true,
-//     message: "get all product  Successfully",
-//     product,
-//   });
-// });
-// export const getAllProducts = HandleAsyncError(async (req, res, next) => {
-//   console.log(req.query);
 
-//   const apiFeatures = new ApiFuncality(Product.find(), req.query).Search(); // ✔️ Use correct method name
-//   const product = await apiFeatures.query; // ✔️ Get result from custom class
+// export const getAllProducts = HandleAsyncError(async (req, res, next) => {
+//   console.log(req.query);
+//   const resultsPerPage = 3;
+//   const apiFeatures = new ApiFuncality(Product.find(), req.query)
+//     .Search()
+//     .filter();
+//   // .pagination(currentPage);
+//   const filteredQuery = apiFeatures.query.clone();
+//   const productCount = await filteredQuery.countDocuments();
+//   const totalPages = Math.ceil(productCount / resultsPerPage);
+//   const product = await apiFeatures.query;
 
 //   res.status(201).json({
 //     success: true,
 //     message: "Get all products successfully",
 //     product,
+//     productCount,
+//     totalPages
 //   });
 // });
 export const getAllProducts = HandleAsyncError(async (req, res, next) => {
   console.log(req.query);
-const currentPage = 3
+
+  const resultsPerPage = 3;
+
   const apiFeatures = new ApiFuncality(Product.find(), req.query)
     .Search()
-    .filter()
-    .pagination(currentPage);
+    .filter();
+
+  const filteredQuery = apiFeatures.query.clone(); // for count
+  const productCount = await filteredQuery.countDocuments();
+
+  apiFeatures.pagination(resultsPerPage); // ✅ Apply pagination here
 
   const product = await apiFeatures.query;
+
+  const totalPages = Math.ceil(productCount / resultsPerPage);
+  const page = Number(req.query.page) || 1;
+  if (page > totalPages && productCount > 0) {
+    return next(new HandleError("this page doesnt exixt"));
+  }
 
   res.status(201).json({
     success: true,
     message: "Get all products successfully",
     product,
+    productCount,
+    totalPages,
+    currentPage: page,
   });
 });
 
@@ -69,10 +83,14 @@ export const updateProduct = HandleAsyncError(async (req, res, next) => {
   //     message: "Product not found",
   //   });
   // }
-
+  apiFeatures.pagination(resultsPerPage);
+  if (!product || product == 0) {
+    return next(new HandleError("No products found", 404));
+  }
   res.status(200).json({
     success: true,
     message: "Product updated successfully",
+    resultsPerPage,
     product,
   });
 });
