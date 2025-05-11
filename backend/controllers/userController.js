@@ -31,6 +31,7 @@ import User from "../Models/userModel.js";
 import HandleAsyncError from "../middleware/HandleAsyncError.js";
 import bcrypt from "bcrypt";
 
+// user register api
 const userRegister = HandleAsyncError(async (req, res, next) => {
   const { name, email, password } = req.body;
 
@@ -44,24 +45,65 @@ const userRegister = HandleAsyncError(async (req, res, next) => {
     });
   }
 
-  // Hash the password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
   // Create the new user
   const user = await User.create({
     name,
     email,
-    password: hashedPassword,
+    password,
     avatar: {
       public_id: "This is temp id",
       url: "This is temp url",
     },
   });
+  const token = user.getJWTToken();
 
   res.status(201).json({
     success: true,
     message: "User created successfully.",
     user,
+    token,
+  });
+});
+
+export const userLogin = HandleAsyncError(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  // Check if email and password are provided
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter both email and password",
+    });
+  }
+
+  // Find user and explicitly select password
+  const user = await User.findOne({ email }).select("+password");
+
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password",
+    });
+  }
+
+  // Compare password
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password",
+    });
+  }
+
+  // Generate token
+  const token = user.getJWTToken();
+
+  res.status(200).json({
+    success: true,
+    message: "Logged in successfully",
+    user,
+    token,
   });
 });
 
