@@ -1,14 +1,22 @@
 // import User from "../Models/userModel.js";
 // import HandleAsyncError from "../middleware/HandleAsyncError.js";
+// import bcrypt from "bcrypt";
 
+// // user register api
 // const userRegister = HandleAsyncError(async (req, res, next) => {
 //   const { name, email, password } = req.body;
-//   const emilexsisting = await User.find({ email });
-//   if (email) {
-//     res.status(201).json({
-//       message: "user already exist please Login.",
+
+//   // Check if the user already exists
+//   const existingUser = await User.findOne({ email });
+
+//   if (existingUser) {
+//     return res.status(409).json({
+//       success: false,
+//       message: "User already exists. Please login.",
 //     });
 //   }
+
+//   // Create the new user
 //   const user = await User.create({
 //     name,
 //     email,
@@ -18,11 +26,55 @@
 //       url: "This is temp url",
 //     },
 //   });
+//   const token = user.getJWTToken();
+
+//   res.status(201).json({
+//     success: true,
+//     message: "User created successfully.",
+//     user,
+//     token,
+//   });
+// });
+
+// export const userLogin = HandleAsyncError(async (req, res, next) => {
+//   const { email, password } = req.body;
+
+//   // Check if email and password are provided
+//   if (!email || !password) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Please enter both email and password",
+//     });
+//   }
+
+//   // Find user and explicitly select password
+//   const user = await User.findOne({ email });
+
+//   if (!user) {
+//     return res.status(401).json({
+//       success: false,
+//       message: "Invalid email or password",
+//     });
+//   }
+
+//   // Compare password
+//   const isMatch = await bcrypt.compare(password, user.password);
+
+//   if (!isMatch) {
+//     return res.status(401).json({
+//       success: false,
+//       message: "Invalid email or password",
+//     });
+//   }
+
+//   // Generate token
+//   const token = user.getJWTToken();
 
 //   res.status(200).json({
 //     success: true,
-//     message: "User Created Successfully",
+//     message: "Logged in successfully",
 //     user,
+//     token,
 //   });
 // });
 
@@ -30,14 +82,13 @@
 import User from "../Models/userModel.js";
 import HandleAsyncError from "../middleware/HandleAsyncError.js";
 import bcrypt from "bcrypt";
+import { sendToken } from "../utils/jwtToken.js";
 
-// user register api
-const userRegister = HandleAsyncError(async (req, res, next) => {
+// Register Controller
+export const userRegister = HandleAsyncError(async (req, res, next) => {
   const { name, email, password } = req.body;
 
-  // Check if the user already exists
   const existingUser = await User.findOne({ email });
-
   if (existingUser) {
     return res.status(409).json({
       success: false,
@@ -45,7 +96,6 @@ const userRegister = HandleAsyncError(async (req, res, next) => {
     });
   }
 
-  // Create the new user
   const user = await User.create({
     name,
     email,
@@ -55,20 +105,22 @@ const userRegister = HandleAsyncError(async (req, res, next) => {
       url: "This is temp url",
     },
   });
-  const token = user.getJWTToken();
 
-  res.status(201).json({
-    success: true,
-    message: "User created successfully.",
-    user,
-    token,
-  });
+  // const token = user.getJWTToken();
+  // res.status(201).json({
+  //   success: true,
+  //   message: "User created successfully.",
+  //   user,
+  //   token,
+  // });
+  sendToken(user, 200, res);
 });
 
+// Login Controller
 export const userLogin = HandleAsyncError(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // Check if email and password are provided
+  // Validate request body
   if (!email || !password) {
     return res.status(400).json({
       success: false,
@@ -76,8 +128,11 @@ export const userLogin = HandleAsyncError(async (req, res, next) => {
     });
   }
 
-  // Find user and explicitly select password
+  // Find the user by email
   const user = await User.findOne({ email }).select("+password");
+
+  // Log the user data for debugging
+  console.log("User found:", user);
 
   if (!user) {
     return res.status(401).json({
@@ -86,7 +141,11 @@ export const userLogin = HandleAsyncError(async (req, res, next) => {
     });
   }
 
-  // Compare password
+  // Log the passwords for debugging (DO NOT do this in production)
+  console.log("Password from req.body:", password);
+  console.log("Password from DB (hashed):", user.password);
+
+  // Compare the entered password with the hashed password in the database
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
@@ -96,15 +155,21 @@ export const userLogin = HandleAsyncError(async (req, res, next) => {
     });
   }
 
-  // Generate token
-  const token = user.getJWTToken();
+  // Generate JWT token for the user
+  // const token = user.getJWTToken();
 
-  res.status(200).json({
-    success: true,
-    message: "Logged in successfully",
-    user,
-    token,
-  });
+  // // Send response back with success
+  // res.status(200).json({
+  //   success: true,
+  //   message: "Logged in successfully",
+  //   user: {
+  //     id: user._id,
+  //     name: user.name,
+  //     email: user.email,
+  //     role: user.role,
+  //     avatar: user.avatar, // Include necessary fields
+  //   },
+  //   token,
+  // });
+  sendToken(user, 200, res);
 });
-
-export default userRegister;
