@@ -4,7 +4,7 @@ import ApiFuncality from "../utils/apiFuncality.js";
 import HandleError from "../utils/handleError.js";
 // create new  product api api/v1/products
 export const createProducts = HandleAsyncError(async (req, res, next) => {
-  console.log(req.body);
+  req.body.user = req.user.id;
   const product = await Product.create(req.body);
   res.status(201).json({
     success: true,
