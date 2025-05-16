@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
+import crypto from "crypto";
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -64,5 +64,13 @@ userSchema.methods.getJWTToken = function () {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
+
+userSchema.methods.generatePasswordResetoken=function(){
+  const resetoken = crypto.randomBytes(20).toString("hex");
+  this.resetPasswordToken =crypto.createHash("sha256").update(resetoken).digest("hex");
+  this.resetPasswordExpire = Date.now()+30*60*1000;
+  // 30 minutes
+  return resetoken;
+}
 
 export default mongoose.model("User", userSchema);
