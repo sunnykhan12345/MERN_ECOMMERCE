@@ -83,7 +83,7 @@ import User from "../Models/userModel.js";
 import HandleAsyncError from "../middleware/HandleAsyncError.js";
 import bcrypt from "bcrypt";
 import { sendToken } from "../utils/jwtToken.js";
-
+import HandleError from "../utils/handleError.js";
 // Register Controller
 export const userRegister = HandleAsyncError(async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -184,4 +184,24 @@ export const logOut = HandleAsyncError(async (req, res, next) => {
     success: true,
     message: "Successfuly logout",
   });
+});
+
+// forget password user link
+
+export const requestPasswordReset = HandleAsyncError(async (req, res, next) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new HandleError("User doesnt exist", 404));
+  }
+  let resetoken;
+  try {
+     resetoken = user.generatePasswordResetoken();
+    await user.save({validateBeforeSave:false})
+  } catch (err) {
+    console.log(`error ${err}`);
+    return next(
+      new HandleError("could not save reset token, Please try again leter", 400)
+    );
+  }
 });
