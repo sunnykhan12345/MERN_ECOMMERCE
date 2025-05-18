@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
@@ -36,10 +35,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "user",
   },
-  user: {
-    type: mongoose.Schema.ObjectId,
-    ref: "User",
-    required: true,
+  // user: {
+  //   type: mongoose.Schema.ObjectId,
+  //   ref: "User",
+  //   required: true,
+  // },
+  role: {
+    type: String,
+    default: "user",
   },
   createdAt: {
     type: Date,
@@ -65,12 +68,15 @@ userSchema.methods.getJWTToken = function () {
   });
 };
 
-userSchema.methods.generatePasswordResetoken=function(){
+userSchema.methods.generatePasswordResetoken = function () {
   const resetoken = crypto.randomBytes(20).toString("hex");
-  this.resetPasswordToken =crypto.createHash("sha256").update(resetoken).digest("hex");
-  this.resetPasswordExpire = Date.now()+30*60*1000;
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetoken)
+    .digest("hex");
+  this.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
   // 30 minutes
   return resetoken;
-}
+};
 
 export default mongoose.model("User", userSchema);

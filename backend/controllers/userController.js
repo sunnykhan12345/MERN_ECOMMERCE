@@ -84,6 +84,8 @@ import HandleAsyncError from "../middleware/HandleAsyncError.js";
 import bcrypt from "bcrypt";
 import { sendToken } from "../utils/jwtToken.js";
 import HandleError from "../utils/handleError.js";
+import { sendEmail } from "../utils/SendEmail.js";
+
 // Register Controller
 export const userRegister = HandleAsyncError(async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -196,12 +198,37 @@ export const requestPasswordReset = HandleAsyncError(async (req, res, next) => {
   }
   let resetoken;
   try {
-     resetoken = user.generatePasswordResetoken();
-    await user.save({validateBeforeSave:false})
+    resetoken = user.generatePasswordResetoken();
+    await user.save({ validateBeforeSave: false });
   } catch (err) {
     console.log(`error ${err}`);
     return next(
       new HandleError("could not save reset token, Please try again leter", 400)
     );
   }
+  const resetPasswordURL = `http://localhost:8000/reset/${resetoken}`;
+  const message = `use the following link to reset your password: ${resetPasswordURL}. \n\n this link well expire with in 30 minuts \n\n if you dont request a password reset, please ignore this mail.`;
+  try{
+    await sendEmail({
+      email:user.email,
+      subject:"Password Reset Request",
+      message
+    })
+
+    res.status(200).json({
+      success:true,
+      message:`Email send to ${user.email} successfully`
+    });
+  }
+
+
+ 
+  catch(error){
+    user.resetPasswordToken=undefined;
+    user.resetPasswordExpire=undefined;
+    await user.save({validateBeforeSave:false})
+    return next(new HandleError("Email could not be send. Please try again later",500))
+
+  }
 });
+
