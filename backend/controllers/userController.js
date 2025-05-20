@@ -87,7 +87,6 @@ import HandleError from "../utils/handleError.js";
 import { sendEmail } from "../utils/SendEmail.js";
 import crypto from "crypto";
 
-
 // Register Controller
 export const userRegister = HandleAsyncError(async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -275,4 +274,69 @@ export const resetPassword = HandleAsyncError(async (req, res, next) => {
 
   // 6. Send new token or success response
   sendToken(user, 200, res);
+});
+
+// Getting user details
+export const GetUserDetails = HandleAsyncError(async (req, res, next) => {
+  // const {data} =  req.body
+
+  const user = await User.findById(req.user.id);
+  console.log(user);
+  return res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// update password
+export const updatePassword = HandleAsyncError(async (req, res, next) => {
+  const { oldPassword, newPassword, Confirmpassword } = req.body;
+
+  if (newPassword !== Confirmpassword) {
+    return next(new HandleError("New passwords do not match", 400));
+  }
+
+  const user = await User.findById(req.user.id).select("+password");
+  if (!user) {
+    return next(new HandleError("User not found", 404));
+  }
+
+  const isMatch = await user.verifyPassword(oldPassword);
+  if (!isMatch) {
+    return next(new HandleError("Old password is incorrect", 400));
+  }
+  if (newPassword !== Confirmpassword) {
+    return next(new HandleError("Password doesn't match", 400));
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Password updated successfully",
+  });
+});
+
+// updatae profile
+export const updateProfile = HandleAsyncError(async (req, res, next) => {
+  const { name, email } = req.body;
+  const updateuserDetails = {
+    name: name,
+    email: email,
+  };
+  const userProfile = await User.findByIdAndUpdate(
+    req.user.id,
+    updateuserDetails,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "User Profile Updated Successfully",
+    userProfile,
+  });
 });

@@ -25,8 +25,11 @@ import {
   logOut,
   requestPasswordReset,
   resetPassword,
+  GetUserDetails,
+  updatePassword,
+  updateProfile,
 } from "../controllers/userController.js";
-
+import { verifyUserAuth } from "../middleware/UserAuth.js";
 const router = express.Router();
 
 router.post("/register", userRegister);
@@ -34,5 +37,8 @@ router.post("/login", userLogin);
 router.post("/logout", logOut);
 router.post("/forget/password", requestPasswordReset);
 router.post("/reset/:token", resetPassword);
+router.get("/profile", verifyUserAuth, GetUserDetails);
+router.post("/password/update", verifyUserAuth, updatePassword);
+router.post("/profile/update", verifyUserAuth, updateProfile);
 
 export default router;
