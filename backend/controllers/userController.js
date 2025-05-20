@@ -85,6 +85,8 @@ import bcrypt from "bcrypt";
 import { sendToken } from "../utils/jwtToken.js";
 import HandleError from "../utils/handleError.js";
 import { sendEmail } from "../utils/SendEmail.js";
+import crypto from "crypto";
+
 
 // Register Controller
 export const userRegister = HandleAsyncError(async (req, res, next) => {
@@ -208,27 +210,69 @@ export const requestPasswordReset = HandleAsyncError(async (req, res, next) => {
   }
   const resetPasswordURL = `http://localhost:8000/reset/${resetoken}`;
   const message = `use the following link to reset your password: ${resetPasswordURL}. \n\n this link well expire with in 30 minuts \n\n if you dont request a password reset, please ignore this mail.`;
-  try{
+  try {
     await sendEmail({
-      email:user.email,
-      subject:"Password Reset Request",
-      message
-    })
+      email: user.email,
+      subject: "Password Reset Request",
+      message,
+    });
 
     res.status(200).json({
-      success:true,
-      message:`Email send to ${user.email} successfully`
+      success: true,
+      message: `Email send to ${user.email} successfully`,
     });
-  }
-
-
- 
-  catch(error){
-    user.resetPasswordToken=undefined;
-    user.resetPasswordExpire=undefined;
-    await user.save({validateBeforeSave:false})
-    return next(new HandleError("Email could not be send. Please try again later",500))
-
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    return next(
+      new HandleError("Email could not be send. Please try again later", 500)
+    );
   }
 });
 
+// Reset Password Controller
+export const resetPassword = HandleAsyncError(async (req, res, next) => {
+  // 1. Hash the token from URL
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  console.log("Token from URL:", req.params.token);
+  console.log("Hashed token:", resetPasswordToken);
+
+  // 2. Find user with valid token and unexpired time
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  // 3. If no user is found, send error
+  if (!user) {
+    return next(
+      new HandleError("Reset Password token is invalid or has expired", 404)
+    );
+  }
+
+  const { password, Confirmpassword } = req.body;
+
+  // 4. Validate password match
+  if (!password || !Confirmpassword) {
+    return next(new HandleError("Please provide both password fields", 400));
+  }
+
+  if (password !== Confirmpassword) {
+    return next(new HandleError("Passwords do not match", 400));
+  }
+
+  // 5. Update password and clear reset token fields
+  user.password = password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  // 6. Send new token or success response
+  sendToken(user, 200, res);
+});

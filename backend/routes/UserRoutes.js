@@ -19,7 +19,13 @@
 
 // export default router;
 import express from "express";
-import { userRegister, userLogin, logOut, requestPasswordReset } from "../controllers/userController.js";
+import {
+  userRegister,
+  userLogin,
+  logOut,
+  requestPasswordReset,
+  resetPassword,
+} from "../controllers/userController.js";
 
 const router = express.Router();
 
@@ -27,5 +33,6 @@ router.post("/register", userRegister);
 router.post("/login", userLogin);
 router.post("/logout", logOut);
 router.post("/forget/password", requestPasswordReset);
+router.post("/reset/:token", resetPassword);
 
 export default router;
